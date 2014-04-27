@@ -123,3 +123,9 @@ PROGRAM = Nat
 # OCAML_LIB_FLAGS +=
 #
 .DEFAULT: $(OCamlProgram $(PROGRAM), $(FILES))
+
+clean:
+  rm -f \
+	*.cmt *.cmi *.annot *.cmti *.cmx *.o \
+	lexer.ml parser.ml parser.mli \
+	$(PROGRAM).opt $(PROGRAM)
