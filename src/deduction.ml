@@ -31,16 +31,16 @@ let rec pp_dtree buf n = function
 	  | [] ->
 		fprintf buf "{ };@,"
 	  | _ ->
-		fprintf buf "{@[<1>@,";
+		fprintf buf "{@[<v 1>@,";
 		List.iter (pp_dtree buf n) tree;
-		fprintf buf "@,@]};";
+		fprintf buf "@]};@,@]";
 	end;;
 
 let pp_dtree_top buf = function
   | Tr ((rel, r), tree) ->
-	fprintf buf "%s by %s {@[<1>@ " (pp_rel rel) (pp_rule r);
+	fprintf buf "%s by %s {@[<v 1>@," (pp_rel rel) (pp_rule r);
 	List.iter (pp_dtree buf 1) tree;
-	fprintf buf "@ }@]@.";;
+	fprintf buf "@]}@.";;
 
 let deduction_step e v =
   match e with
@@ -67,7 +67,6 @@ let deduction_step e v =
 	  | _ -> raise (DeductionError "deduction_step: times")
 	end
   | Val _ -> raise (DeductionError "deduction_step: val") ;;
-
 	
 let rec deduction rel =
   match rel with
