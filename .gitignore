@@ -7,3 +7,12 @@
 *.cmx
 *.cmxs
 *.cmxa
+*.cmt
+*.cmti
+
+*.omc
+.omake*
+
+Nat
+
+*.opt
