@@ -1,0 +1,16 @@
+.PHONY: clean
+
+################################################
+# Build an OCaml library
+#
+
+FILES[] =
+    lib
+
+LIB = lib
+
+.DEFAULT: $(OCamlLibrary $(LIB), $(FILES))
+
+clean:
+	rm -f \
+	*.cmt *.cmi *.annot *.cmti *.cmx *.o *.a *.cmxa
