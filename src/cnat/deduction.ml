@@ -3,19 +3,34 @@ open Rule;;
 open Lib;;
 open Syntax;;
 
-exception DeductionErrro of string;;
+exception DeductionError of string;;
 
-let deduction_less n1 n2 =
-  if S n1 = n2 then (LSucc, [])
+let deduction_less1 n1 n2 =
+  if S n1 = n2 then (`LSucc, [])
   else
-	(LTrans, [Less(n1, S n1);
+	(`LTrans, [Less(n1, S n1);
 			  Less(S n1, n2)]);;
 
-let rec deduction rel =
+let  deduction_less2 n1 n2 =
+  match n1 with
+  | Z -> (`LZero, [])
+  | S n1' ->
+	match n2 with
+	| Z -> raise (DeductionError "deduction_less2:n2 is Z")
+	| S n2' -> (`LSuccSucc, [Less(n1', n2');])
+;;
+
+let rec deduction n rel =
+  let deduction_less =
+	match n with
+	| 1 -> deduction_less1
+	| 2 -> deduction_less2
+	| _ -> failwith ("invalid arg: " ^ (string_of_int n))
+  in
   match rel with
   | Less(n1, n2) ->
 	let r, dtree = deduction_less n1 n2 in
-	Tr((rel, r), List.map deduction dtree)
+	Tr((rel, r), List.map (deduction n) dtree)
 ;;
 
 let rec pp_dtree buf n = function
