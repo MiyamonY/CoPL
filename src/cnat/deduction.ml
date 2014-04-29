@@ -17,14 +17,20 @@ let  deduction_less2 n1 n2 =
   | S n1' ->
 	match n2 with
 	| Z -> raise (DeductionError "deduction_less2:n2 is Z")
-	| S n2' -> (`LSuccSucc, [Less(n1', n2');])
-;;
+	| S n2' -> (`LSuccSucc, [Less(n1', n2');]);;
+
+let deduction_less3 n1 n2 =
+  match n2 with
+	| S n2' when n1 = n2' -> (`LSucc, [])
+	| S n2' -> (`LSuccR, [Less(n1, n2');])
+	| _ -> raise (DeductionError "deduction_less3:n2 is Z");;
 
 let rec deduction n rel =
   let deduction_less =
 	match n with
 	| 1 -> deduction_less1
 	| 2 -> deduction_less2
+	| 3 -> deduction_less3
 	| _ -> failwith ("invalid arg: " ^ (string_of_int n))
   in
   match rel with
