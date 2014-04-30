@@ -13,6 +13,6 @@
 *.omc
 .omake*
 
-Nat
-
 *.opt
+
+TAGS
