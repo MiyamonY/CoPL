@@ -25,7 +25,7 @@
 # Phony targets are scoped, so you probably want to declare them first.
 #
 
-.PHONY: all clean
+.PHONY: all clean ReduceNat
 
 ########################################################################
 # Subdirectories.
@@ -33,7 +33,7 @@
 # If so, define the subdirectory targets and uncomment this section.
 #
 
-.SUBDIRS: lib nat cnat evalnat reducenat
+# .SUBDIRS:
 
 ########################################################################
 # OCaml configuration.
@@ -48,7 +48,7 @@
 #
 # This project requires ocamlfind (default - false).
 #
-USE_OCAMLFIND = true
+# USE_OCAMLFIND = true
 #
 # OCAMLPACKS[] =
 #    pack1
@@ -62,15 +62,15 @@ USE_OCAMLFIND = true
 #
 # Include path
 #
-# OCAMLINCLUDES +=
+OCAMLINCLUDES += ../lib
 
 #
 # Compile native or byte code? 
 #
 # The default values are defined as follows:
 #
-NATIVE_ENABLED = $(OCAMLOPT_EXISTS)
-BYTE_ENABLED = $(not $(OCAMLOPT_EXISTS))
+# NATIVE_ENABLED = $(OCAMLOPT_EXISTS)
+# BYTE_ENABLED = $(not $(OCAMLOPT_EXISTS))
 
 #
 # Various options
@@ -88,18 +88,44 @@ BYTE_ENABLED = $(not $(OCAMLOPT_EXISTS))
 # Workaround for the fact that ocamldep does not pay attention to .mll
 # and .mly files.
 #
+MENHIR_ENABLED = true
+OCamlGeneratedFiles(parser.ml lexer.ml)
+
+################################################
+# Build an OCaml library
+#
+
+#FILES[] =
+#    file1
+#    file2
+#
+# LIB = main
+#
+# .DEFAULT: $(OCamlLibrary $(LIB), $(FILES))
 
 ################################################
 # Build an OCaml program
 #
 
-#FILES[] =
-#
-#
-#PROGRAM = Nat
-# OCAML_LIBS +=
+FILES[] =
+	main
+	deduction
+	rule
+	syntax
+	parser
+	lexer
+
+PROGRAM = ReduceNatExp
+OCAML_LIBS += ../lib/lib
 # OCAML_CLIBS +=
 # OCAML_OTHER_LIBS +=
-# OCAML_LIB_FLAGS +=
+# OCAML_LIB_FLAGS += 
 #
 
+ReduceNat: $(OCamlProgram $(PROGRAM), $(FILES))
+
+clean:
+  rm -f \
+	*.cmt *.cmi *.annot *.cmti *.cmx *.o \
+	lexer.ml parser.ml parser.mli \
+	$(PROGRAM).opt $(PROGRAM)
