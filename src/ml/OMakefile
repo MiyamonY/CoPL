@@ -129,4 +129,5 @@ clean:
   rm -f \
 	*.cmt *.cmi *.annot *.cmti *.cmx *.o \
 	lexer.ml parser.ml parser.mli \
+	*.conflicts *.automaton \
 	$(PROGRAM).opt $(PROGRAM)
