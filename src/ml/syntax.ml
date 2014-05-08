@@ -3,11 +3,13 @@ open Printf;;
 type value =
   | I of int
   | B of bool
+  | E
 ;;
 
 let rec pp_value = function
   | I i -> string_of_int i
   | B b -> string_of_bool b
+  | E -> "error"
 ;;
 	
 type op =

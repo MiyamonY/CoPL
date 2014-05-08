@@ -5,17 +5,22 @@ open Syntax
 %}
 
 /****************** Declaration **************/
-%token LPAREN RPAREN
-
-%token PLUS TIMES MINUS LT
-%token IF THEN ELSE
-
 %token EVALTO
-
+%token LPAREN RPAREN
+%token IF THEN ELSE
+%token TIMES PLUS MINUS LT
 %token EOL
-
+	   
 %token <int> INT
 %token <bool> BOOL
+%token ERROR
+
+%nonassoc ELSE
+		  
+%left LT
+%left PLUS MINUS
+%left TIMES
+		  
 /****************** Start ********************/
 %start toplevel
 %type <Syntax.rel> toplevel
@@ -24,26 +29,21 @@ open Syntax
 %%
 
 toplevel :
-| LtExp EVALTO Value EOL { EvalTo ($1, $3) } 
+| e=Exp EVALTO v=Value EOL { EvalTo (e, v) } 
 
-LtExp :
-| PlusExp LT PlusExp { BinOp (Lt, $1, $3) }
-| PlusExp { $1 }
-
-PlusExp :
-| PlusExp PLUS TimesExp { BinOp (Plus, $1, $3) }
-| PlusExp MINUS TimesExp { BinOp (Minus, $1, $3) }
-| TimesExp { $1 }
-
-TimesExp :
-| TimesExp TIMES Term { BinOp (Times, $1, $3) }
-| Term { $1 }
+Exp :
+| IF e1=Exp THEN e2=Exp ELSE e3=Exp {If (e1, e2, e3) }
+| e1=Exp LT e2=Exp { BinOp (Lt, e1, e2) }
+| e1=Exp PLUS e2=Exp { BinOp (Plus, e1, e2) }
+| e1=Exp MINUS e2=Exp { BinOp (Minus, e1, e2) }
+| e1=Exp TIMES e2=Exp { BinOp (Times, e1, e2) }
+| e=Term { e }
 
 Term :
-| LPAREN PlusExp RPAREN { $2 }
-| IF LtExp THEN LtExp ELSE LtExp {If ($2, $4, $6) }
-| Value { Val $1 }
+| LPAREN e=Exp RPAREN { e }
+| v=Value { Val v }
 	
 Value :
-| i = INT { I i }
-| b = BOOL { B b }
+| i=INT { I i }
+| b=BOOL { B b }
+| ERROR { E }

@@ -89,7 +89,7 @@ OCAMLINCLUDES += ../lib
 # and .mly files.
 #
 MENHIR_ENABLED = true
-#MENHIR_FLAGS += --trace # for DEBUG
+#MENHIR_FLAGS += --explain --dump  --trace # for DEBUG
 OCamlGeneratedFiles(parser.ml lexer.ml)
 
 ################################################
@@ -116,7 +116,7 @@ FILES[] =
 	parser
 	lexer
 
-PROGRAM = EvalML
+PROGRAM = EvalML1Err
 OCAML_LIBS += ../lib/lib
 # OCAML_CLIBS +=
 # OCAML_OTHER_LIBS +=
