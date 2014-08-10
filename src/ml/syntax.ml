@@ -30,14 +30,20 @@ let rec pp_op_is = function
   | Times -> "times"
   | Lt -> "less than"
 ;;
-
+  
+type var = string;;
+  
+let pp_var v = v;;
+  
 type exp =
+  | Var of var
   | Val of value
   | BinOp of op * exp * exp
   | If of exp * exp * exp
 ;;
-
+  
 let rec pp_exp = function
+  | Var v -> pp_var v
   | Val v -> pp_value v
   | BinOp(op, e1, e2) ->
 	let str =
@@ -61,18 +67,26 @@ let rec pp_exp = function
 	sprintf "(if %s then %s else %s)"
 	  (pp_exp e1) (pp_exp e2) (pp_exp e3)
 ;;
-
+  
+type env = (var * value) list ;;
+  
+let pp_env env =
+  let pp_pair (var,value) =
+    sprintf "%s = %s" (pp_var var) (pp_value value)
+  in
+  String.concat "," (List.map pp_pair (List.rev env));;
+      
 type rel =
-  | EvalTo of exp * value
+  | EvalTo of env * exp * value
   | Is of op * value * value * value
 ;;
 
 let  pp_rel  = function
-  | EvalTo (e, v) ->
-	sprintf "%s evalto %s"
-	(pp_exp e) (pp_value v)
+  | EvalTo (env, e, v) ->
+	   sprintf "%s |- %s evalto %s"
+	           (pp_env env) (pp_exp e) (pp_value v)
   | Is (op, n1, n2, n) ->
-	sprintf "%s %s %s is %s"
-	  (pp_value n1) (pp_op_is op) (pp_value n2) (pp_value n)
+	   sprintf "%s %s %s is %s"
+	           (pp_value n1) (pp_op_is op) (pp_value n2) (pp_value n)
 ;;
 

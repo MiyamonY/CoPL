@@ -38,13 +38,15 @@ rule main = parse
 
 | "(" { Parser.LPAREN }
 | ")" { Parser.RPAREN }
-	
-  
+      
+| "="	{ Parser.EQ }
+| "," { Parser.COMMA }
+| "|-"  { Parser.ENV }      
+        
 | ['a'-'z'] ['a'-'z']*
     { let id = Lexing.lexeme lexbuf in
       try List.assoc id reservedWords with
-      | _ -> raise (Unexpected_token
-					  (sprintf "Lexer unexpeded token: %s" id))
+      | _ -> Parser.VAR id
     }
 		
 | eof { exit 0 }

@@ -6,18 +6,19 @@ open Lib;;
 exception DeductionError of string;;
 exception EvalError of string;;
   
-let rec eval = function
+let rec eval env = function
+  | Var v -> List.assoc v env
   | Val v -> v
   | If (e1, e2, e3) ->
 	 begin
-	   match eval e1 with
-	   | B true -> eval e2
-	   | B false -> eval e3
+	   match eval env e1 with
+	   | B true -> eval env e2
+	   | B false -> eval env e3
 	   | _ -> raise (EvalError "eval:condiction-clause is not bool")
 	 end
   | BinOp (op, e1, e2) ->
 	 begin
-	   match eval e1, eval e2 with
+	   match eval env e1, eval env e2 with
 	   | I i1, I i2 ->
 		  begin
 			match op with
@@ -30,21 +31,25 @@ let rec eval = function
 	 end 
 ;;
 
-let rec deduction_eval e v =
+let rec deduction_eval env e v =
   match e with
+  | Var var ->
+     let (var', value')= List.hd env in
+     if var = var' then (EVar1, [])
+     else (EVar2, [EvalTo(List.tl env, e, v)])
   | Val (I i) ->
 	 (EInt,[])
   | Val (B b) ->
 	 (EBool, [])
   | If (e1, e2, e3) ->
 	 begin
-	 match eval e1 with
+	 match eval env e1 with
 	   | B true as b-> 
-		  (EIfT,[EvalTo(e1, b);
-				 EvalTo(e2, eval e2);])
+		    (EIfT,[EvalTo(env, e1, b);
+				       EvalTo(env, e2, eval env e2);])
 	   | B false as b->
-		  (EIfF, [EvalTo(e1, b);
-				  EvalTo(e3, eval e3);])
+		    (EIfF, [EvalTo(env, e1, b);
+				        EvalTo(env, e3, eval env e3);])
 	   | _ -> raise (EvalError "deduction_eval: if condition
 								clause is not bool")
 	 end
@@ -55,11 +60,11 @@ let rec deduction_eval e v =
 	   | Minus -> EMinus
 	   | Times -> ETimes
 	   | Lt -> ELt in
-	let v1 = eval e1 in
-	let v2 = eval e2 in
-	 (r, [EvalTo(e1, v1);
-		  EvalTo(e2, v2);
-		  Is(op, v1, v2, v)])
+	let v1 = eval env e1 in
+	let v2 = eval env e2 in
+	 (r, [EvalTo(env, e1, v1);
+		    EvalTo(env, e2, v2);
+		    Is(op, v1, v2, v)])
 ;;
 	  
 let deduction_is op n1 n2 n =
@@ -86,8 +91,8 @@ let deduction_is op n1 n2 n =
 let rec deduction rel =
   let r, dtree =
 	match rel with
-	| EvalTo (e, v) -> 
-	  deduction_eval e v
+	| EvalTo (env, e, v) -> 
+	  deduction_eval env e v
 	| Is (op, n1, n2, n) ->
 	  deduction_is op n1 n2 n
   in
