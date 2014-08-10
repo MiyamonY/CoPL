@@ -28,7 +28,10 @@ let rec eval env = function
 			| Lt -> B (i1 < i2)
 		  end
 	   | _ -> raise (EvalError "eval: binop operand is not int")
-	 end 
+	 end
+  | Let (var, e1, e2) ->
+     let v1 = eval env e1 in
+     eval ((var, v1)::env) e2
 ;;
 
 let rec deduction_eval env e v =
@@ -65,6 +68,12 @@ let rec deduction_eval env e v =
 	 (r, [EvalTo(env, e1, v1);
 		    EvalTo(env, e2, v2);
 		    Is(op, v1, v2, v)])
+  | Let (var, e1, e2) ->
+     let v1 = eval env e1 in
+     let new_env = (var, v1)::env in
+     let v2 = eval new_env e2 in
+     (ELet, [EvalTo(env, e1, v1);
+             EvalTo(new_env, e2, v2)])
 ;;
 	  
 let deduction_is op n1 n2 n =

@@ -14,6 +14,7 @@ open Syntax
 %token ENV
        
 %token EQ COMMA
+%token LET IN
        
 %nonassoc ELSE
 %left LT
@@ -40,6 +41,7 @@ EnvList :
 | var=VAR EQ v=Value { [(var, v)] }
   
 Exp :
+| LET var=VAR EQ e1=Exp IN e2=Exp { Let (var, e1, e2) }
 | IF e1=Exp THEN e2=Exp ELSE e3=Exp {If (e1, e2, e3) }
 | e1=Exp LT e2=Exp { BinOp (Lt, e1, e2) }
 | e1=Exp PLUS e2=Exp { BinOp (Plus, e1, e2) }

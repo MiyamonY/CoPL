@@ -40,6 +40,7 @@ type exp =
   | Val of value
   | BinOp of op * exp * exp
   | If of exp * exp * exp
+  | Let of var * exp * exp
 ;;
   
 let rec pp_exp = function
@@ -66,15 +67,18 @@ let rec pp_exp = function
   | If (e1, e2, e3) ->
 	sprintf "(if %s then %s else %s)"
 	  (pp_exp e1) (pp_exp e2) (pp_exp e3)
+  | Let (var, e1, e2) ->
+     sprintf "let %s = %s in %s"
+             (pp_var var) (pp_exp e1) (pp_exp e2)
 ;;
   
 type env = (var * value) list ;;
   
 let pp_env env =
-  let pp_pair (var,value) =
+  let pp_pair (var,value) =     
     sprintf "%s = %s" (pp_var var) (pp_value value)
   in
-  String.concat "," (List.map pp_pair (List.rev env));;
+  String.concat ", " (List.map pp_pair (List.rev env));;
       
 type rel =
   | EvalTo of env * exp * value

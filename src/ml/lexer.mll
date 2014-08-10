@@ -13,7 +13,8 @@
 	("if", Parser.IF);
 	("then", Parser.THEN);
 	("else", Parser.ELSE);
-	
+	("let", Parser.LET);
+  ("in", Parser.IN);
   ]
 }
 
