@@ -1,14 +1,4 @@
 open Printf;;
-
-type value =
-  | I of int
-  | B of bool
-;;
-
-let rec pp_value = function
-  | I i -> string_of_int i
-  | B b -> string_of_bool b
-;;
 	
 type op =
   | Plus
@@ -34,16 +24,31 @@ let rec pp_op_is = function
 type var = string;;
   
 let pp_var v = v;;
-  
-type exp =
+
+type value =
+  | I of int
+  | B of bool
+  | F of env * var * exp
+
+and exp =
   | Var of var
   | Val of value
   | BinOp of op * exp * exp
   | If of exp * exp * exp
   | Let of var * exp * exp
-;;
-  
-let rec pp_exp = function
+  | Fun of var * exp
+  | App of exp * exp
+                         
+and env = (var * value) list ;;
+
+let rec pp_value = function
+  | I i -> string_of_int i
+  | B b -> string_of_bool b
+  | F (env, v, e) ->
+     sprintf "(%s) [fun %s -> %s]"
+             (pp_env env) (pp_var v) (pp_exp e)
+             
+and pp_exp = function
   | Var v -> pp_var v
   | Val v -> pp_value v
   | BinOp(op, e1, e2) ->
@@ -70,11 +75,12 @@ let rec pp_exp = function
   | Let (var, e1, e2) ->
      sprintf "let %s = %s in %s"
              (pp_var var) (pp_exp e1) (pp_exp e2)
-;;
-  
-type env = (var * value) list ;;
-  
-let pp_env env =
+  | Fun (v, e) ->
+     sprintf "(fun %s -> %s)" (pp_var v) (pp_exp e)
+  | App (e1, e2) ->
+     sprintf "%s (%s)" (pp_exp e1) (pp_exp e2)
+             
+and pp_env env =
   let pp_pair (var,value) =     
     sprintf "%s = %s" (pp_var var) (pp_value value)
   in

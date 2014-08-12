@@ -15,6 +15,7 @@
 	("else", Parser.ELSE);
 	("let", Parser.LET);
   ("in", Parser.IN);
+  ("fun", Parser.FUN);
   ]
 }
 
@@ -40,10 +41,15 @@ rule main = parse
 | "(" { Parser.LPAREN }
 | ")" { Parser.RPAREN }
       
+| "[" { Parser.LSBRA }
+| "]" { Parser.RSBRA }
+      
 | "="	{ Parser.EQ }
 | "," { Parser.COMMA }
 | "|-"  { Parser.ENV }      
-        
+
+| "->" { Parser.ARROW }
+       
 | ['a'-'z'] ['a'-'z']*
     { let id = Lexing.lexeme lexbuf in
       try List.assoc id reservedWords with
@@ -55,6 +61,5 @@ rule main = parse
 | _ { let token = Lexing.lexeme lexbuf in
 	  raise (Unexpected_token
 			   (sprintf "Lexer unexpeded token: %s" token))}
-
 (***************** Trailer *******************)
 	

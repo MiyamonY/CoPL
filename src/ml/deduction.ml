@@ -32,6 +32,15 @@ let rec eval env = function
   | Let (var, e1, e2) ->
      let v1 = eval env e1 in
      eval ((var, v1)::env) e2
+  | Fun (v, e) ->
+     F(env, v, e)
+  | App (e1, e2) ->
+     let v1 = eval env e1 in
+     let v2 = eval env e2 in
+     match v1 with
+     | F (env', v, e0) ->
+        eval ((v, v2)::env') e0
+     | _ -> raise (EvalError "eval: not appled to function")
 ;;
 
 let rec deduction_eval env e v =
@@ -44,6 +53,8 @@ let rec deduction_eval env e v =
 	 (EInt,[])
   | Val (B b) ->
 	 (EBool, [])
+  | Val F(_, _ , _) ->
+     raise (DeductionError "deduction_eval: no deduction rule for function value")
   | If (e1, e2, e3) ->
 	 begin
 	 match eval env e1 with
@@ -74,6 +85,19 @@ let rec deduction_eval env e v =
      let v2 = eval new_env e2 in
      (ELet, [EvalTo(env, e1, v1);
              EvalTo(new_env, e2, v2)])
+  | Fun (var, e) ->
+     (EFun, [])
+  | App (e1, e2) ->
+     let v1 = eval env e1 in
+     let v2 = eval env e2 in
+     match v1 with
+     | F (env', var, e0) ->
+        let new_env = (var, v2) :: env' in
+        let v = eval new_env e0 in
+        (EApp, [EvalTo(env, e1, v1);
+                EvalTo(env, e2, v2);
+                EvalTo(new_env, e0, v)])
+     | _ -> raise (DeductionError "deduction_eval: left exp is not function")
 ;;
 	  
 let deduction_is op n1 n2 n =

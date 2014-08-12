@@ -6,6 +6,7 @@ open Syntax
 
 /****************** Declaration **************/
 %token LPAREN RPAREN
+%token LSBRA RSBRA
 
 %token PLUS TIMES MINUS LT
 %token IF THEN ELSE
@@ -15,15 +16,15 @@ open Syntax
        
 %token EQ COMMA
 %token LET IN
+%token FUN ARROW
        
-%nonassoc ELSE
 %left LT
 %left PLUS MINUS
 %left TIMES
 
 %token <int> INT
 %token <bool> BOOL
-%token <string> VAR
+%token <Syntax.var> VAR
               
 /****************** Start ********************/
 %start toplevel
@@ -33,27 +34,39 @@ open Syntax
 %%
 
 toplevel :
-| ENV e=Exp EVALTO v=Value EOL { EvalTo ([], e, v) }
-| el=EnvList ENV e=Exp EVALTO v=Value EOL { EvalTo (List.rev el, e, v)}
+| ENV e=Exp1 EVALTO v=Value EOL { EvalTo ([], e, v) }
+| el=EnvList ENV e=Exp1 EVALTO v=Value EOL { EvalTo (List.rev el, e, v)}
                                    
 EnvList :
 | var=VAR EQ v=Value COMMA el=EnvList { (var, v) :: el }
 | var=VAR EQ v=Value { [(var, v)] }
   
-Exp :
-| LET var=VAR EQ e1=Exp IN e2=Exp { Let (var, e1, e2) }
-| IF e1=Exp THEN e2=Exp ELSE e3=Exp {If (e1, e2, e3) }
-| e1=Exp LT e2=Exp { BinOp (Lt, e1, e2) }
-| e1=Exp PLUS e2=Exp { BinOp (Plus, e1, e2) }
-| e1=Exp MINUS e2=Exp { BinOp (Minus, e1, e2) }
-| e1=Exp TIMES e2=Exp { BinOp (Times, e1, e2) }
-| t=Term { t }
+Exp1 :
+| LET var=VAR EQ e1=Exp1 IN e2=Exp1 { Let (var, e1, e2) }
+| IF e1=Exp1 THEN e2=Exp1 ELSE e3=Exp1 {If (e1, e2, e3) }
+| FUN v=VAR ARROW e=Exp1 { Fun(v, e) }
+| e=Exp2 { e }
+  
+Exp2:                                     
+| e1=Exp2 LT e2=Exp2 { BinOp (Lt, e1, e2) }
+| e1=Exp2 PLUS e2=Exp2 { BinOp (Plus, e1, e2) }
+| e1=Exp2 MINUS e2=Exp2 { BinOp (Minus, e1, e2) }
+| e1=Exp2 TIMES e2=Exp2 { BinOp (Times, e1, e2) }
+| t=Term1 { t }
 
-Term :
-| LPAREN e=Exp RPAREN { e }
+Term1 :
+| t1=Term1  t2=Term2 { App(t1, t2) }
+| t=Term2 { t }
+
+Term2:
+| LPAREN e=Exp1 RPAREN { e }
 | v=Value { Val v }
 | v=VAR { Var v }
 	
 Value :
 | i=INT { I i }
 | b=BOOL { B b }
+| LPAREN RPAREN LSBRA FUN v=VAR ARROW e=Exp1 RSBRA
+   { F ([], v, e)}                                             
+| LPAREN el=EnvList RPAREN LSBRA FUN v=VAR ARROW e=Exp1 RSBRA
+   { F (el, v, e)}                                             
