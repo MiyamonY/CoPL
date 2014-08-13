@@ -29,7 +29,8 @@ type value =
   | I of int
   | B of bool
   | F of env * var * exp
-
+  | RF of env * var * var * exp
+    
 and exp =
   | Var of var
   | Val of value
@@ -38,7 +39,8 @@ and exp =
   | Let of var * exp * exp
   | Fun of var * exp
   | App of exp * exp
-                         
+  | RecFun of var * var * exp * exp
+      
 and env = (var * value) list ;;
 
 let rec pp_value = function
@@ -47,7 +49,9 @@ let rec pp_value = function
   | F (env, v, e) ->
      sprintf "(%s) [fun %s -> %s]"
              (pp_env env) (pp_var v) (pp_exp e)
-             
+  | RF (env, v1, v2, e) ->
+     sprintf "(%s)[rec %s = fun %s -> %s]"
+             (pp_env env) (pp_var v1) (pp_var v2) (pp_exp e)
 and pp_exp = function
   | Var v -> pp_var v
   | Val v -> pp_value v
@@ -79,6 +83,9 @@ and pp_exp = function
      sprintf "(fun %s -> %s)" (pp_var v) (pp_exp e)
   | App (e1, e2) ->
      sprintf "%s (%s)" (pp_exp e1) (pp_exp e2)
+  | RecFun (v1, v2, e1, e2) ->
+     sprintf "let rec %s = fun %s -> %s in %s"
+             (pp_var v1) (pp_var v2) (pp_exp e1) (pp_exp e2)
              
 and pp_env env =
   let pp_pair (var,value) =     

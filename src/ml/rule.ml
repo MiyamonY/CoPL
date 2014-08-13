@@ -12,6 +12,8 @@ type rule =
   | ELet
   | EFun
   | EApp
+  | ELetRec
+  | EAppRec
   | BPlus
   | BMinus
   | BTimes
@@ -32,6 +34,8 @@ let pp_rule = function
   | ELet -> "E-Let"
   | EFun -> "E-Fun"
   | EApp -> "E-App"
+  | ELetRec -> "E-LetRec"
+  | EAppRec -> "E-AppRec"
   | BPlus -> "B-Plus"
   | BMinus -> "B-Minus"
   | BTimes -> "B-Times"

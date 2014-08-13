@@ -16,7 +16,7 @@ open Syntax
        
 %token EQ COMMA
 %token LET IN
-%token FUN ARROW
+%token FUN ARROW REC
        
 %left LT
 %left PLUS MINUS
@@ -44,7 +44,9 @@ EnvList :
 Exp1 :
 | LET var=VAR EQ e1=Exp1 IN e2=Exp1 { Let (var, e1, e2) }
 | IF e1=Exp1 THEN e2=Exp1 ELSE e3=Exp1 {If (e1, e2, e3) }
-| FUN v=VAR ARROW e=Exp1 { Fun(v, e) }
+| FUN v=VAR ARROW e=Exp1 { Fun (v, e) }
+| LET REC var1=VAR EQ FUN var2=VAR ARROW e1=Exp1 IN e2=Exp1
+                                   { RecFun (var1, var2, e1, e2) }
 | e=Exp2 { e }
   
 Exp2:                                     

@@ -37,10 +37,17 @@ let rec eval env = function
   | App (e1, e2) ->
      let v1 = eval env e1 in
      let v2 = eval env e2 in
-     match v1 with
-     | F (env', v, e0) ->
-        eval ((v, v2)::env') e0
-     | _ -> raise (EvalError "eval: not appled to function")
+     begin
+       match v1 with
+       | F (env', v, e0) ->
+          eval ((v, v2)::env') e0
+       | RF (env2, x, y, e0) ->
+          eval ((y,v2)::(x, v1)::env2) e0
+       | _ -> raise (EvalError "eval: not appled to function")
+     end
+  | RecFun (var1, var2, e1, e2) ->
+     let new_env = (var1, RF(env, var1, var2, e1))::env in
+     eval new_env e2
 ;;
 
 let rec deduction_eval env e v =
@@ -54,7 +61,11 @@ let rec deduction_eval env e v =
   | Val (B b) ->
 	 (EBool, [])
   | Val F(_, _ , _) ->
-     raise (DeductionError "deduction_eval: no deduction rule for function value")
+     raise (DeductionError "deduction_eval: \
+                            no deduction rule for function value")
+  | Val RF(_, _, _, _) ->
+     raise (DeductionError "deduction_eval: \
+                            no deduction rule for recursive function value")
   | If (e1, e2, e3) ->
 	 begin
 	 match eval env e1 with
@@ -90,6 +101,7 @@ let rec deduction_eval env e v =
   | App (e1, e2) ->
      let v1 = eval env e1 in
      let v2 = eval env e2 in
+     begin
      match v1 with
      | F (env', var, e0) ->
         let new_env = (var, v2) :: env' in
@@ -97,7 +109,16 @@ let rec deduction_eval env e v =
         (EApp, [EvalTo(env, e1, v1);
                 EvalTo(env, e2, v2);
                 EvalTo(new_env, e0, v)])
+     | RF (env2, x, y, e0) ->
+        let new_env = (y, v2)::(x, v1)::env2 in
+        (EAppRec, [EvalTo(env, e1, v1);
+                   EvalTo(env, e2, v2);
+                   EvalTo(new_env, e0, v)])
      | _ -> raise (DeductionError "deduction_eval: left exp is not function")
+     end
+  | RecFun(x, y, e1, e2) ->
+     let new_env = (x, RF(env, x, y, e1))::env in
+     (ELetRec, [EvalTo(new_env, e2, v);])
 ;;
 	  
 let deduction_is op n1 n2 n =
