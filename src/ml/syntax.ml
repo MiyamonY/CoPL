@@ -30,7 +30,9 @@ type value =
   | B of bool
   | F of env * var * exp
   | RF of env * var * var * exp
-    
+  | N
+  | C of value * value
+                      
 and exp =
   | Var of var
   | Val of value
@@ -40,7 +42,10 @@ and exp =
   | Fun of var * exp
   | App of exp * exp
   | RecFun of var * var * exp * exp
-      
+  | Nil
+  | Cons of exp * exp
+  | Match of exp * exp * var * var * exp
+    
 and env = (var * value) list ;;
 
 let rec pp_value = function
@@ -52,6 +57,10 @@ let rec pp_value = function
   | RF (env, v1, v2, e) ->
      sprintf "(%s)[rec %s = fun %s -> %s]"
              (pp_env env) (pp_var v1) (pp_var v2) (pp_exp e)
+  | N -> "[]"
+  | C(v1, v2) ->
+     sprintf "(%s) :: %s" (pp_value v1) (pp_value v2)
+             
 and pp_exp = function
   | Var v -> pp_var v
   | Val v -> pp_value v
@@ -86,6 +95,12 @@ and pp_exp = function
   | RecFun (v1, v2, e1, e2) ->
      sprintf "let rec %s = fun %s -> %s in %s"
              (pp_var v1) (pp_var v2) (pp_exp e1) (pp_exp e2)
+  | Nil -> "[]"
+  | Cons (e1, e2) ->
+     sprintf "(%s) :: %s" (pp_exp e1) (pp_exp e2)
+  | Match(e1, e2, x, y, e3) ->
+     sprintf "match %s with [] -> %s | %s :: %s -> %s"
+             (pp_exp e1) (pp_exp e2) (pp_var x) (pp_var y) (pp_exp e3)
              
 and pp_env env =
   let pp_pair (var,value) =     

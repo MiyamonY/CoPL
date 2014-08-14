@@ -18,6 +18,8 @@ open Syntax
 %token LET IN
 %token FUN ARROW REC
        
+%token CONS MATCH WITH OR
+   
 %left LT
 %left PLUS MINUS
 %left TIMES
@@ -47,6 +49,8 @@ Exp1 :
 | FUN v=VAR ARROW e=Exp1 { Fun (v, e) }
 | LET REC var1=VAR EQ FUN var2=VAR ARROW e1=Exp1 IN e2=Exp1
                                    { RecFun (var1, var2, e1, e2) }
+| MATCH e1=Exp1 WITH LSBRA RSBRA ARROW e2=Exp1 OR v1=VAR CONS v2=VAR ARROW
+        e3=Exp2  { Match(e1, e2, v1, v2, e3) }
 | e=Exp2 { e }
   
 Exp2:                                     
@@ -57,18 +61,29 @@ Exp2:
 | t=Term1 { t }
 
 Term1 :
-| t1=Term1  t2=Term2 { App(t1, t2) }
+| h=Term2 CONS tl=Term1 { Cons(h, tl) }
 | t=Term2 { t }
 
 Term2:
+| t1=Term2  t2=Term3 { App(t1, t2) }
+| t=Term3 { t }
+          
+Term3:
 | LPAREN e=Exp1 RPAREN { e }
-| v=Value { Val v }
+| i=INT { Val (I i) }
+| LSBRA RSBRA { Nil }        
+| b=BOOL { Val (B b) }
 | v=VAR { Var v }
-	
+        
 Value :
+| v1=Value1 CONS v2=Value { C(v1, v2) }
+| v=Value1 { v }
+
+Value1:                         
 | i=INT { I i }
 | b=BOOL { B b }
 | LPAREN RPAREN LSBRA FUN v=VAR ARROW e=Exp1 RSBRA
    { F ([], v, e)}                                             
 | LPAREN el=EnvList RPAREN LSBRA FUN v=VAR ARROW e=Exp1 RSBRA
-   { F (el, v, e)}                                             
+   { F (el, v, e)}
+| LSBRA RSBRA { N }

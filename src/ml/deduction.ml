@@ -48,18 +48,32 @@ let rec eval env = function
   | RecFun (var1, var2, e1, e2) ->
      let new_env = (var1, RF(env, var1, var2, e1))::env in
      eval new_env e2
+  | Nil -> N
+  | Cons(e1, e2) ->
+     C (eval env e1, eval env e2)
+  | Match (e1, e2, x, y, e3) ->
+     let v1 = eval env e1 in
+     match v1 with
+     | N -> eval env e2
+     | C (v1, v2) ->
+        let new_env = (x,v1) :: (y, v2) :: env in
+        eval new_env e3
+     | _ -> raise (EvalError "eval: match value is not list")
 ;;
 
 let rec deduction_eval env e v =
   match e with
   | Var var ->
-     let (var', value')= List.hd env in
-     if var = var' then (EVar1, [])
-     else (EVar2, [EvalTo(List.tl env, e, v)])
+     (EVar, [])
   | Val (I i) ->
-	 (EInt,[])
+	   (EInt,[])
   | Val (B b) ->
-	 (EBool, [])
+	   (EBool, [])
+  | Val N ->
+     (ENil, [])
+  | Val (C(v1, v2)) ->
+     raise (DeductionError "deduction_eval: \
+                            no deduction rule for cons value" )
   | Val F(_, _ , _) ->
      raise (DeductionError "deduction_eval: \
                             no deduction rule for function value")
@@ -119,6 +133,21 @@ let rec deduction_eval env e v =
   | RecFun(x, y, e1, e2) ->
      let new_env = (x, RF(env, x, y, e1))::env in
      (ELetRec, [EvalTo(new_env, e2, v);])
+  | Nil -> (ENil,[])
+  | Cons(e1, e2) ->
+     let v1 = eval env e1 in
+     let v2 = eval env e2 in
+     (ECons, [EvalTo(env, e1, v1);
+              EvalTo(env, e2, v2)])
+  | Match(e1, e2, x, y, e3) ->
+     let v1 = eval env e1 in
+     match v1 with
+     | N -> (EMatchNil, [EvalTo(env, e1, v1);
+                         EvalTo(env, e2, v);])
+     | C(x', y') ->
+        (EMatchCons, [EvalTo(env, e1, v1);
+                      EvalTo((y, y')::(x, x')::env, e3, v)])
+     | _ -> raise (DeductionError "deduction_eval: match value is not list")
 ;;
 	  
 let deduction_is op n1 n2 n =
@@ -145,31 +174,31 @@ let deduction_is op n1 n2 n =
 let rec deduction rel =
   let r, dtree =
 	match rel with
-	| EvalTo (env, e, v) -> 
-	  deduction_eval env e v
+	| EvalTo (env, e, v) ->
+	   deduction_eval env e v
 	| Is (op, n1, n2, n) ->
-	  deduction_is op n1 n2 n
+	   deduction_is op n1 n2 n
   in
   Tr ((rel, r), List.map deduction dtree)
 ;;
 
 let rec pp_dtree buf n = function
   | Tr ((rel, r), tree) ->
-	fprintf buf "%s by %s " (pp_rel rel) (pp_rule r);
-	begin
-	  match tree with
-	  | [] ->
-		fprintf buf "{ };@,"
-	  | _ ->
-		fprintf buf "{@[<v 1>@,";
-		List.iter (pp_dtree buf n) tree;
-		fprintf buf "@]};@,@]";
-	end
+	   fprintf buf "%s by %s " (pp_rel rel) (pp_rule r);
+	   begin
+	     match tree with
+	     | [] ->
+		      fprintf buf "{ };@,"
+	     | _ ->
+		      fprintf buf "{@[<v 1>@,";
+		      List.iter (pp_dtree buf n) tree;
+		      fprintf buf "@]};@,@]";
+	   end
 ;;
 
 let rec pp_dtree_top buf = function
   | Tr ((rel, r), tree) ->
-	fprintf buf "%s by %s {@[<v 1>@," (pp_rel rel) (pp_rule r);
-	List.iter (pp_dtree buf 1) tree;
-	fprintf buf "@]}@."
+	   fprintf buf "%s by %s {@[<v 1>@," (pp_rel rel) (pp_rule r);
+	   List.iter (pp_dtree buf 1) tree;
+	   fprintf buf "@]}@."
 ;;

@@ -17,6 +17,8 @@
   ("in", Parser.IN);
   ("fun", Parser.FUN);
   ("rec", Parser.REC);
+  ("match", Parser.MATCH);
+  ("with", Parser.WITH);
   ]
 }
 
@@ -38,20 +40,18 @@ rule main = parse
 | "-" { Parser.MINUS }
 | "*" { Parser.TIMES }
 | "<" { Parser.LT }
-
 | "(" { Parser.LPAREN }
 | ")" { Parser.RPAREN }
-      
 | "[" { Parser.LSBRA }
 | "]" { Parser.RSBRA }
-      
 | "="	{ Parser.EQ }
 | "," { Parser.COMMA }
 | "|-"  { Parser.ENV }      
-
 | "->" { Parser.ARROW }
-       
-| ['a'-'z'] ['a'-'z']*
+| "::" { Parser.CONS }
+| "|" { Parser.OR }
+      
+| ['a'-'z' '_'] ['a'-'z' '1'-'9' '_']*
     { let id = Lexing.lexeme lexbuf in
       try List.assoc id reservedWords with
       | _ -> Parser.VAR id

@@ -1,8 +1,7 @@
 type rule =
   | EInt
   | EBool
-  | EVar1
-  | EVar2
+  | EVar
   | EIfT
   | EIfF
   | EPlus
@@ -14,6 +13,10 @@ type rule =
   | EApp
   | ELetRec
   | EAppRec
+  | ENil
+  | ECons
+  | EMatchNil
+  | EMatchCons
   | BPlus
   | BMinus
   | BTimes
@@ -23,8 +26,7 @@ type rule =
 let pp_rule = function
   | EInt -> "E-Int"
   | EBool -> "E-Bool"
-  | EVar1 -> "E-Var1"
-  | EVar2 -> "E-Var2"
+  | EVar -> "E-Var"
   | EIfT -> "E-IfT"
   | EIfF -> "E-IfF"
   | EPlus -> "E-Plus"
@@ -36,6 +38,10 @@ let pp_rule = function
   | EApp -> "E-App"
   | ELetRec -> "E-LetRec"
   | EAppRec -> "E-AppRec"
+  | ENil -> "E-Nil"
+  | ECons -> "E-Cons"
+  | EMatchNil -> "E-MatchNil"
+  | EMatchCons -> "E-MatchCons"
   | BPlus -> "B-Plus"
   | BMinus -> "B-Minus"
   | BTimes -> "B-Times"
