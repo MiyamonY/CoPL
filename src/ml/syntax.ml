@@ -44,8 +44,18 @@ and exp =
   | RecFun of var * var * exp * exp
   | Nil
   | Cons of exp * exp
-  | Match of exp * exp * var * var * exp
-    
+  | Match of exp * clauses
+                                       
+and pat =
+  | PVar of var
+  | PNil
+  | PCons of pat * pat
+  | PWild
+      
+and clauses =
+  | CPat of pat * exp
+  | CSec of pat * exp * clauses
+                    
 and env = (var * value) list ;;
 
 let rec pp_value = function
@@ -98,10 +108,21 @@ and pp_exp = function
   | Nil -> "[]"
   | Cons (e1, e2) ->
      sprintf "(%s) :: %s" (pp_exp e1) (pp_exp e2)
-  | Match(e1, e2, x, y, e3) ->
-     sprintf "match %s with [] -> %s | %s :: %s -> %s"
-             (pp_exp e1) (pp_exp e2) (pp_var x) (pp_var y) (pp_exp e3)
+  | Match(e, c) ->
+     sprintf "match %s with %s"
+             (pp_exp e) (pp_clauses c)
              
+and pp_pat = function
+  | PVar v -> (pp_var v)
+  | PNil -> "[]"
+  | PCons (p1, p2) -> sprintf "(%s) :: (%s)" (pp_pat p1) (pp_pat p2)
+  | PWild -> "_"
+
+and pp_clauses = function
+  | CPat (p, e) -> sprintf "%s -> %s" (pp_pat p) (pp_exp e)
+  | CSec (p, e, c) -> sprintf "%s -> %s |\n %s"
+                              (pp_pat p) (pp_exp e) (pp_clauses c)
+  
 and pp_env env =
   let pp_pair (var,value) =     
     sprintf "%s = %s" (pp_var var) (pp_value value)
@@ -111,6 +132,8 @@ and pp_env env =
 type rel =
   | EvalTo of env * exp * value
   | Is of op * value * value * value
+  | Matches of pat * value * env
+  | NotMatches of pat * value
 ;;
 
 let  pp_rel  = function
@@ -120,5 +143,11 @@ let  pp_rel  = function
   | Is (op, n1, n2, n) ->
 	   sprintf "%s %s %s is %s"
 	           (pp_value n1) (pp_op_is op) (pp_value n2) (pp_value n)
+  | Matches (p, v, env) ->
+     sprintf  "%s matches %s when (%s)"
+              (pp_pat p) (pp_value v) (pp_env env)
+  | NotMatches (p, v) ->
+     sprintf  "%s doesn't match %s"
+              (pp_pat p) (pp_value v)              
 ;;
 

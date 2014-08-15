@@ -15,12 +15,21 @@ type rule =
   | EAppRec
   | ENil
   | ECons
-  | EMatchNil
-  | EMatchCons
+  | EMatchM1
+  | EMatchM2
+  | EMatchN
   | BPlus
   | BMinus
   | BTimes
   | BLt
+  | MVar
+  | MNil
+  | MCons
+  | MWild
+  | NMConsNil
+  | NMNilCons
+  | NMConsConsL
+  | NMConsConsR
 ;;
 
 let pp_rule = function
@@ -40,10 +49,19 @@ let pp_rule = function
   | EAppRec -> "E-AppRec"
   | ENil -> "E-Nil"
   | ECons -> "E-Cons"
-  | EMatchNil -> "E-MatchNil"
-  | EMatchCons -> "E-MatchCons"
+  | EMatchM1 -> "E-MatchM1"
+  | EMatchM2 -> "E-MatchM2"
+  | EMatchN -> "E-MatchN"
   | BPlus -> "B-Plus"
   | BMinus -> "B-Minus"
   | BTimes -> "B-Times"
   | BLt -> "B-Lt"
+  | MVar -> "M-Var"
+  | MNil -> "M-Nil"
+  | MCons -> "M-Cons"
+  | MWild -> "M-Wild"
+  | NMConsNil -> "NM-ConsNil"
+  | NMNilCons -> "NM-NilCons"
+  | NMConsConsL -> "NM-ConsConsL"
+  | NMConsConsR -> "NM-ConsConsR"
 ;;

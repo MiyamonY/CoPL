@@ -50,8 +50,9 @@ rule main = parse
 | "->" { Parser.ARROW }
 | "::" { Parser.CONS }
 | "|" { Parser.OR }
-      
-| ['a'-'z' '_'] ['a'-'z' '1'-'9' '_']*
+| "_" { Parser.WILDCARD }
+    
+| ['a'-'z' '_'] ['a'-'z' '1'-'9' '_' '\'']*
     { let id = Lexing.lexeme lexbuf in
       try List.assoc id reservedWords with
       | _ -> Parser.VAR id

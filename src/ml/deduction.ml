@@ -5,7 +5,48 @@ open Lib;;
 
 exception DeductionError of string;;
 exception EvalError of string;;
+exception MatchError of string;;
   
+let rec match_pat p v =
+  match p with
+  | PVar v' -> Some [(v', v)]
+  | PNil ->
+     begin
+     match v with
+     | N -> Some []
+     | _ -> None
+     end
+  | PCons (p1, p2) ->
+     begin
+     match v with
+     | C (v1, v2) ->
+        begin
+        match match_pat p1 v1 ,match_pat p2 v2 with
+        | Some env1, Some env2 -> Some (env2 @ env1)
+        | _, _ -> None
+        end
+     | _ -> None
+     end
+  | PWild ->
+     Some []
+;;
+
+let rec match_clauses p v =
+  match p with
+  | CPat (p, e) ->
+     begin
+     match match_pat p v with
+     | Some env' -> Some (env', e)
+     | None -> None
+     end
+  | CSec (p, e, c) ->
+     begin
+     match match_pat p v with
+     | Some env' -> Some (env', e)
+     | None -> match_clauses c v
+     end
+;;     
+
 let rec eval env = function
   | Var v -> List.assoc v env
   | Val v -> v
@@ -51,14 +92,12 @@ let rec eval env = function
   | Nil -> N
   | Cons(e1, e2) ->
      C (eval env e1, eval env e2)
-  | Match (e1, e2, x, y, e3) ->
-     let v1 = eval env e1 in
-     match v1 with
-     | N -> eval env e2
-     | C (v1, v2) ->
-        let new_env = (x,v1) :: (y, v2) :: env in
-        eval new_env e3
-     | _ -> raise (EvalError "eval: match value is not list")
+  | Match (e, c) ->
+     let v = eval env e in
+     match match_clauses c v with
+     | None -> raise (EvalError "eval: not match")
+     | Some (env', e') ->
+        eval (env'@ env) e'
 ;;
 
 let rec deduction_eval env e v =
@@ -139,15 +178,29 @@ let rec deduction_eval env e v =
      let v2 = eval env e2 in
      (ECons, [EvalTo(env, e1, v1);
               EvalTo(env, e2, v2)])
-  | Match(e1, e2, x, y, e3) ->
-     let v1 = eval env e1 in
-     match v1 with
-     | N -> (EMatchNil, [EvalTo(env, e1, v1);
-                         EvalTo(env, e2, v);])
-     | C(x', y') ->
-        (EMatchCons, [EvalTo(env, e1, v1);
-                      EvalTo((y, y')::(x, x')::env, e3, v)])
-     | _ -> raise (DeductionError "deduction_eval: match value is not list")
+  | Match(e0, CPat(p, e)) ->
+     let v0 = eval env e0 in
+     let env1 =
+       match match_pat p v0 with
+       | Some env' -> env'
+       | None -> raise (MatchError "deduction_eval: pattern doesn't match")
+     in
+     let env2 = env1 @ env in
+     (EMatchM1, [EvalTo(env, e0, v0);
+                 Matches(p, v0, env1);
+                 EvalTo(env2, e, v)])
+  | Match(e0, CSec(p, e, c)) ->
+     let v0 = eval env e0 in
+     match match_pat p v0 with
+     | None ->
+        (EMatchN, [EvalTo(env, e0, v0);
+                    NotMatches(p, v0);
+                    EvalTo(env, Match(e0, c), v)])
+     | Some e1 ->
+        let e2 = e1 @ env in
+        (EMatchM2, [EvalTo(env, e0, v0);
+                    Matches(p, v0, e1);
+                    EvalTo(e2, e, v)])
 ;;
 	  
 let deduction_is op n1 n2 n =
@@ -171,6 +224,46 @@ let deduction_is op n1 n2 n =
   |  _ -> raise (EvalError "deduction_is: binop operand is not int")
 ;;
 
+let rec deduction_matches p v env =
+  let rec has_var_pat p =
+    match p with
+    | PVar x -> [x]
+    | PCons (p1, p2) ->
+       (has_var_pat p1) @ (has_var_pat p2)
+    | _ -> []
+  in
+  match p with
+  | PVar _ -> (MVar, [])
+  | PNil -> (MNil, [])
+  | PCons(p1, p2) ->
+     begin
+     match v with
+     | C(v1, v2) ->
+        let var_in_p1 = has_var_pat p1 in
+        let env1 = List.map (fun x -> (x, List.assoc x env)) var_in_p1 in
+        let env2 = List.fold_right (fun x i -> List.remove_assoc x i)
+                                   var_in_p1 env in
+       (MCons, [Matches (p1, v1, env1);
+                Matches (p2, v2, env2);])
+     | _ ->
+        raise (MatchError "deduction_matches: pattern doesn't match")
+     end
+  | PWild -> (MWild, [])
+;;
+  
+let rec deduction_not_matches p v =
+  match p, v with
+  | PNil, C(_, _) -> (NMConsNil, [])
+  | PCons (_, _), N -> (NMNilCons, [])
+  | PCons (p1, p2), C(v1, v2) ->
+     begin
+       match match_pat p1 v1 with
+       | Some _ -> (NMConsConsR, [NotMatches (p2, v2)])
+       | None -> (NMConsConsL, [NotMatches (p1, v1)])
+     end
+  | _, _ -> raise (MatchError "deduction_not_matches: pattern does match")
+;;
+
 let rec deduction rel =
   let r, dtree =
 	match rel with
@@ -178,6 +271,10 @@ let rec deduction rel =
 	   deduction_eval env e v
 	| Is (op, n1, n2, n) ->
 	   deduction_is op n1 n2 n
+  | Matches (p, v, env) ->
+     deduction_matches p v env
+  | NotMatches (p, v) ->
+     deduction_not_matches p v
   in
   Tr ((rel, r), List.map deduction dtree)
 ;;

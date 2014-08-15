@@ -19,7 +19,9 @@ open Syntax
 %token FUN ARROW REC
        
 %token CONS MATCH WITH OR
-   
+       
+%token WILDCARD
+       
 %left LT
 %left PLUS MINUS
 %left TIMES
@@ -49,8 +51,7 @@ Exp1 :
 | FUN v=VAR ARROW e=Exp1 { Fun (v, e) }
 | LET REC var1=VAR EQ FUN var2=VAR ARROW e1=Exp1 IN e2=Exp1
                                    { RecFun (var1, var2, e1, e2) }
-| MATCH e1=Exp1 WITH LSBRA RSBRA ARROW e2=Exp1 OR v1=VAR CONS v2=VAR ARROW
-        e3=Exp2  { Match(e1, e2, v1, v2, e3) }
+| MATCH e=Exp1 WITH c=Clauses  { Match(e, c) }
 | e=Exp2 { e }
   
 Exp2:                                     
@@ -60,6 +61,20 @@ Exp2:
 | e1=Exp2 TIMES e2=Exp2 { BinOp (Times, e1, e2) }
 | t=Term1 { t }
 
+Pat :
+| p1=Pat1 CONS p2=Pat { PCons(p1, p2) }
+| p=Pat1 { p }
+
+Pat1 :
+| LPAREN p=Pat RPAREN { p }      
+| v=VAR { PVar v }
+| LSBRA RSBRA { PNil }
+| WILDCARD { PWild }
+
+Clauses :
+| p=Pat ARROW e=Exp1 OR c=Clauses { CSec(p, e, c) }
+| p=Pat ARROW e=Exp1 { CPat(p, e) }
+  
 Term1 :
 | h=Term2 CONS tl=Term1 { Cons(h, tl) }
 | t=Term2 { t }
