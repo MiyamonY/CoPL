@@ -25,13 +25,30 @@ type var = string;;
   
 let pp_var v = v;;
 
+type tyvar = int;;
+  
+type types =
+  | Bool
+  | Int
+  | Arrow of types * types
+  | List of types
+  | TyVar of tyvar
+;;
+
+let rec pp_types = function
+  | Bool -> "bool"
+  | Int -> "int"
+  | Arrow (t1, t2) ->
+     sprintf "(%s -> %s)" (pp_types t1) (pp_types t2)
+  | List t ->
+     sprintf "%s list" (pp_types t)
+  | TyVar n ->
+     sprintf "(Var %d)" n
+;;
+  
 type value =
   | I of int
   | B of bool
-  | F of env * var * exp
-  | RF of env * var * var * exp
-  | N
-  | C of value * value
                       
 and exp =
   | Var of var
@@ -46,20 +63,11 @@ and exp =
   | Cons of exp * exp
   | Match of exp * exp * var * var * exp
     
-and env = (var * value) list ;;
+and env = (var * types) list ;;
 
 let rec pp_value = function
   | I i -> string_of_int i
   | B b -> string_of_bool b
-  | F (env, v, e) ->
-     sprintf "(%s) [fun %s -> %s]"
-             (pp_env env) (pp_var v) (pp_exp e)
-  | RF (env, v1, v2, e) ->
-     sprintf "(%s)[rec %s = fun %s -> %s]"
-             (pp_env env) (pp_var v1) (pp_var v2) (pp_exp e)
-  | N -> "[]"
-  | C(v1, v2) ->
-     sprintf "(%s) :: %s" (pp_value v1) (pp_value v2)
              
 and pp_exp = function
   | Var v -> pp_var v
@@ -103,22 +111,26 @@ and pp_exp = function
              (pp_exp e1) (pp_exp e2) (pp_var x) (pp_var y) (pp_exp e3)
              
 and pp_env env =
-  let pp_pair (var,value) =     
-    sprintf "%s = %s" (pp_var var) (pp_value value)
+  let pp_pair (var, ty) =     
+    sprintf "%s : %s" (pp_var var) (pp_types ty)
   in
   String.concat ", " (List.map pp_pair (List.rev env));;
       
 type rel =
-  | EvalTo of env * exp * value
-  | Is of op * value * value * value
+  | Types of env * exp * types
 ;;
 
 let  pp_rel  = function
-  | EvalTo (env, e, v) ->
-	   sprintf "%s |- %s evalto %s"
-	           (pp_env env) (pp_exp e) (pp_value v)
-  | Is (op, n1, n2, n) ->
-	   sprintf "%s %s %s is %s"
-	           (pp_value n1) (pp_op_is op) (pp_value n2) (pp_value n)
+  | Types (env, e, v) ->
+	   sprintf "%s |- %s : %s"
+	           (pp_env env) (pp_exp e) (pp_types v)
 ;;
 
+type subst = (tyvar * types) list;;
+  
+let rec pp_subst subst =
+  let pp_subst_aux (ty1, ty2) =
+    sprintf "(%s : %s)" (pp_types ty1) (pp_types ty2)
+  in
+  String.concat "," (List.map pp_subst_aux subst)
+;;

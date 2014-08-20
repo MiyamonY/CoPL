@@ -1,16 +1,16 @@
-/****************** Header *******************/
+(****************** Header *******************)
 
 %{
 open Syntax
 %}
 
-/****************** Declaration **************/
+(****************** Declaration **************)
 %token LPAREN RPAREN
 %token LSBRA RSBRA
 
 %token PLUS TIMES MINUS LT
 %token IF THEN ELSE
-%token EVALTO
+       
 %token EOL
 %token ENV
        
@@ -19,29 +19,41 @@ open Syntax
 %token FUN ARROW REC
        
 %token CONS MATCH WITH OR
-   
+       
+%token TYPES
+       
 %left LT
 %left PLUS MINUS
 %left TIMES
+            
+(* Type *)
+%token TINT
+%token TBOOL
+%token TLIST
 
+%left ARROW       
+%nonassoc TLIST
+      
 %token <int> INT
 %token <bool> BOOL
 %token <Syntax.var> VAR
               
-/****************** Start ********************/
-%start toplevel
-%type <Syntax.rel> toplevel
+(****************** Start ********************)
+%start <Syntax.rel> toplevel
 
-/****************** Syntax *******************/
+(****************** Syntax *******************)
 %%
 
 toplevel :
-| ENV e=Exp1 EVALTO v=Value EOL { EvalTo ([], e, v) }
-| el=EnvList ENV e=Exp1 EVALTO v=Value EOL { EvalTo (List.rev el, e, v)}
+| el=EnvList? ENV e=Exp1 TYPES t=Types EOL
+                 { let env_list = (match el with
+                                   | Some el' -> List.rev el'
+                                   | None -> []) in
+                   Types ( env_list, e, t) }
                                    
 EnvList :
-| var=VAR EQ v=Value COMMA el=EnvList { (var, v) :: el }
-| var=VAR EQ v=Value { [(var, v)] }
+| var=VAR TYPES t=Types COMMA el=EnvList { (var, t) :: el }
+| var=VAR TYPES t=Types { [(var, t)] }
   
 Exp1 :
 | LET var=VAR EQ e1=Exp1 IN e2=Exp1 { Let (var, e1, e2) }
@@ -65,7 +77,7 @@ Term1 :
 | t=Term2 { t }
 
 Term2:
-| t1=Term2  t2=Term3 { App(t1, t2) }
+| t1=Term2 t2=Term3 { App(t1, t2) }
 | t=Term3 { t }
           
 Term3:
@@ -74,16 +86,13 @@ Term3:
 | LSBRA RSBRA { Nil }        
 | b=BOOL { Val (B b) }
 | v=VAR { Var v }
-        
-Value :
-| v1=Value1 CONS v2=Value { C(v1, v2) }
-| v=Value1 { v }
 
-Value1:                         
-| i=INT { I i }
-| b=BOOL { B b }
-| LPAREN RPAREN LSBRA FUN v=VAR ARROW e=Exp1 RSBRA
-   { F ([], v, e)}                                             
-| LPAREN el=EnvList RPAREN LSBRA FUN v=VAR ARROW e=Exp1 RSBRA
-   { F (el, v, e)}
-| LSBRA RSBRA { N }
+Types:
+| t1=Types1 ARROW t2=Types { Arrow (t1, t2) }
+| t=Types1 { t }
+           
+Types1:
+| LPAREN t=Types RPAREN { t }
+| TBOOL { Bool }
+| TINT { Int }
+| t=Types TLIST { List t }

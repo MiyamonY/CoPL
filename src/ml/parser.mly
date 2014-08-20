@@ -1,10 +1,10 @@
-/****************** Header *******************/
+(****************** Header *******************)
 
 %{
 open Syntax
 %}
 
-/****************** Declaration **************/
+(****************** Declaration **************)
 %token LPAREN RPAREN
 %token LSBRA RSBRA
 
@@ -25,16 +25,16 @@ open Syntax
 %left LT
 %left PLUS MINUS
 %left TIMES
-
+      
+         
 %token <int> INT
 %token <bool> BOOL
 %token <Syntax.var> VAR
               
-/****************** Start ********************/
-%start toplevel
-%type <Syntax.rel> toplevel
+(****************** Start ********************)
+%start <Syntax.rel> toplevel
 
-/****************** Syntax *******************/
+(****************** Syntax *******************)
 %%
 
 toplevel :
@@ -72,7 +72,7 @@ Pat1 :
 | WILDCARD { PWild }
 
 Clauses :
-| p=Pat ARROW e=Exp1 OR c=Clauses { CSec(p, e, c) }
+| p=Pat ARROW e=Exp1 OR c=Clauses { CSec(p, e, c) } 
 | p=Pat ARROW e=Exp1 { CPat(p, e) }
   
 Term1 :
