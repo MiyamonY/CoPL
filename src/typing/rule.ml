@@ -4,11 +4,11 @@ type rule =
   | TIf
   | TPlus
   | TMinus
-  | TTimes
+  | TMult
   | TLt
   | TVar
   | TLet
-  | TFun
+  | TAbs
   | TApp
   | TLetRec
   | TNil
@@ -22,11 +22,11 @@ let pp_rule = function
   | TIf -> "T-If"
   | TPlus -> "T-Plus"
   | TMinus -> "T-Minus"
-  | TTimes -> "T-Times"
+  | TMult -> "T-Mult"
   | TLt -> "T-Lt"
   | TVar -> "T-Var"
   | TLet -> "T-Let"
-  | TFun -> "T-Fun"
+  | TAbs -> "T-Abs"
   | TApp -> "T-App"
   | TLetRec -> "T-LetRec"
   | TNil -> "T-Nil"

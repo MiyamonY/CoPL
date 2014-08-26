@@ -54,13 +54,19 @@ rule main = parse
 | "::" { Parser.CONS }
 | "|" { Parser.OR }
 | ":" { Parser.TYPES }
-      
+| "." { Parser.DOT }
+
 | ['a'-'z' '_'] ['a'-'z' '1'-'9' '_' '\'']*
     { let id = Lexing.lexeme lexbuf in
       try List.assoc id reservedWords with
       | _ -> Parser.VAR id
     }
-		
+      
+| ['\''] ['a'-'z']
+    { let tyvar = Lexing.lexeme lexbuf in
+      Parser.TVAR tyvar.[1]
+    }
+    
 | eof { exit 0 }
 
 | _ { let token = Lexing.lexeme lexbuf in

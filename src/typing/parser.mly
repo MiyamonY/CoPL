@@ -21,6 +21,7 @@ open Syntax
 %token CONS MATCH WITH OR
        
 %token TYPES
+%token DOT
        
 %left LT
 %left PLUS MINUS
@@ -30,13 +31,14 @@ open Syntax
 %token TINT
 %token TBOOL
 %token TLIST
-
+       
 %left ARROW       
 %nonassoc TLIST
       
 %token <int> INT
 %token <bool> BOOL
 %token <Syntax.var> VAR
+%token <Syntax.tyvar> TVAR
               
 (****************** Start ********************)
 %start <Syntax.rel> toplevel
@@ -52,8 +54,8 @@ toplevel :
                    Types ( env_list, e, t) }
                                    
 EnvList :
-| var=VAR TYPES t=Types COMMA el=EnvList { (var, t) :: el }
-| var=VAR TYPES t=Types { [(var, t)] }
+| var=VAR TYPES t=TyScheme COMMA el=EnvList { (var, t) :: el }
+| var=VAR TYPES t=TyScheme { [(var, t)] }
   
 Exp1 :
 | LET var=VAR EQ e1=Exp1 IN e2=Exp1 { Let (var, e1, e2) }
@@ -75,7 +77,7 @@ Exp2:
 Term1 :
 | h=Term2 CONS tl=Term1 { Cons(h, tl) }
 | t=Term2 { t }
-
+          
 Term2:
 | t1=Term2 t2=Term3 { App(t1, t2) }
 | t=Term3 { t }
@@ -87,6 +89,10 @@ Term3:
 | b=BOOL { Val (B b) }
 | v=VAR { Var v }
 
+TyScheme :
+| tv=TVAR+ DOT t=Types { (tv, t) }
+| t=Types { ([], t) }
+          
 Types:
 | t1=Types1 ARROW t2=Types { Arrow (t1, t2) }
 | t=Types1 { t }
@@ -95,4 +101,5 @@ Types1:
 | LPAREN t=Types RPAREN { t }
 | TBOOL { Bool }
 | TINT { Int }
+| tvar=TVAR { TyVar tvar }
 | t=Types TLIST { List t }

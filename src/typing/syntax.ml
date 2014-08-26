@@ -25,8 +25,11 @@ type var = string;;
   
 let pp_var v = v;;
 
-type tyvar = int;;
-  
+type tyvar = char;;
+
+let pp_tyvar tyvar =
+  "'" ^ Char.escaped tyvar;;
+                    
 type types =
   | Bool
   | Int
@@ -43,8 +46,18 @@ let rec pp_types = function
   | List t ->
      sprintf "%s list" (pp_types t)
   | TyVar n ->
-     sprintf "(Var %d)" n
+     pp_tyvar n
 ;;
+  
+type ty_scheme = (tyvar list) * types;;
+
+let rec pp_tyscheme (tyvar, ty) =
+  let styvar =
+    List.map pp_tyvar tyvar
+    |> String.concat " " in
+  match tyvar with
+  | [] -> sprintf "%s" (pp_types ty)
+  | _ :: _ -> sprintf "%s.%s" styvar (pp_types ty);;
   
 type value =
   | I of int
@@ -62,8 +75,9 @@ and exp =
   | Nil
   | Cons of exp * exp
   | Match of exp * exp * var * var * exp
-    
-and env = (var * types) list ;;
+;;
+  
+type env = (var * ty_scheme) list ;;
 
 let rec pp_value = function
   | I i -> string_of_int i
@@ -109,12 +123,14 @@ and pp_exp = function
   | Match(e1, e2, x, y, e3) ->
      sprintf "match %s with [] -> %s | %s :: %s -> %s"
              (pp_exp e1) (pp_exp e2) (pp_var x) (pp_var y) (pp_exp e3)
-             
-and pp_env env =
+;;
+  
+let rec pp_env env =
   let pp_pair (var, ty) =     
-    sprintf "%s : %s" (pp_var var) (pp_types ty)
+    sprintf "%s : %s" (pp_var var) (pp_tyscheme ty)
   in
-  String.concat ", " (List.map pp_pair (List.rev env));;
+  String.concat ", " (List.map pp_pair (List.rev env))
+;;
       
 type rel =
   | Types of env * exp * types
